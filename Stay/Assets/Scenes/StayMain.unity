@@ -358,14 +358,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   personalSpaceRadius: 6
-  recoilSpaceRadius: 2
+  recoilSpaceRadius: 2.5
   coverSpaceRadius: 1
   shrinkSpeed: 0.5
   recoilSpaceVerticalOffset: 1
   coverSpaceVerticalOffset: 1
   pushSpeed: 5
   returnSpeed: 10
-  recoilPushMultiplier: 4
+  recoilPushMultiplier: 10
   movementSmoothing: 0.1
   maxDistanceFromOrigin: 10
   movementDelay: 2
@@ -375,7 +375,6 @@ MonoBehaviour:
     m_Bits: 64
   otherHandWidth: 5
   collisionOffset: 0.1
-  useEdgePrecision: 1
   visualizeColliders: 1
   logCollisions: 1
   continuousDetection: 1
