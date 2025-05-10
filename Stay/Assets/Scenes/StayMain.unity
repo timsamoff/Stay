@@ -266,6 +266,7 @@ GameObject:
   m_Component:
   - component: {fileID: 586729191}
   - component: {fileID: 586729192}
+  - component: {fileID: 586729193}
   - component: {fileID: 586729194}
   m_Layer: 7
   m_Name: OtherHand
@@ -344,6 +345,41 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &586729193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 586729190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a93ec9dd476f77c459216412721fcbfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  personalSpaceRadius: 6
+  recoilSpaceRadius: 2
+  coverSpaceRadius: 1
+  shrinkSpeed: 0.5
+  recoilSpaceVerticalOffset: 1
+  coverSpaceVerticalOffset: 1
+  pushSpeed: 5
+  returnSpeed: 10
+  recoilPushMultiplier: 4
+  movementSmoothing: 0.1
+  maxDistanceFromOrigin: 10
+  movementDelay: 2
+  playerHand: {fileID: 1394906034}
+  playerHandLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  otherHandWidth: 5
+  collisionOffset: 0.1
+  useEdgePrecision: 1
+  visualizeColliders: 1
+  logCollisions: 1
+  continuousDetection: 1
+  detectionInterval: 0.1
 --- !u!50 &586729194
 Rigidbody2D:
   serializedVersion: 5
@@ -352,7 +388,7 @@ Rigidbody2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 586729190}
-  m_BodyType: 1
+  m_BodyType: 0
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
@@ -559,6 +595,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c21a49d2a777ec4bb2f3dd9c4afa0c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fadeCanvas: {fileID: 2042141939}
+  fadeDuration: 6
+  menuScene: MainMenu
+  otherHandTransform: {fileID: 586729191}
+  gameOver: 0
 --- !u!4 &1371332058
 Transform:
   m_ObjectHideFlags: 0

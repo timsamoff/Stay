@@ -21,7 +21,7 @@ public class PlayerHand : MonoBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
-        // Calculate the hand's bottom offset from its pivot
+        // Calculate hand's bottom offset from its pivot
         handBottomOffset = transform.position.y - spriteRenderer.bounds.min.y;
 
         // Calculate maximum allowed Y position (when hand bottom touches screen bottom)
@@ -45,7 +45,7 @@ public class PlayerHand : MonoBehaviour
         // Calculate target velocity
         Vector3 targetVelocity = inputDirection * speed;
 
-        // Smooth the velocity
+        // Smooth velocity
         velocity = Vector3.Lerp(velocity, targetVelocity, smoothing * Time.deltaTime * 60f);
 
         // Calculate new position
@@ -54,7 +54,7 @@ public class PlayerHand : MonoBehaviour
         // Calculate hand's bottom position at new position
         float newHandBottom = newPosition.y - handBottomOffset;
 
-        // CONSTRAINT: Prevent moving up when hand bottom is at screen bottom
+        // Prevent moving up when hand bottom is at screen bottom
         if (newHandBottom >= maxAllowedY - handBottomOffset && velocity.y > 0)
         {
             newPosition.y = maxAllowedY;
