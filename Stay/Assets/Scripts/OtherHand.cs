@@ -179,7 +179,7 @@ public class OtherHand : MonoBehaviour
 
         foreach (var collider in GetActiveColliders())
         {
-            if (collider == null) continue;
+            if (collider == null || collider == coverSpace) continue; // Skip cover space
 
             int hits = Physics2D.OverlapCollider(collider, contactFilter, overlapResults);
             bool playerInZone = false;
@@ -212,11 +212,18 @@ public class OtherHand : MonoBehaviour
     {
         return new[]
         {
-            personalSpace?.enabled == true ? personalSpace : null,
-            recoilSpace?.enabled == true ? recoilSpace : null,
-            coverSpace?.enabled == true ? coverSpace : null,
-            movementSpace?.enabled == true ? movementSpace : null
+        personalSpace?.enabled == true ? personalSpace : null,
+        recoilSpace?.enabled == true ? recoilSpace : null,
+        movementSpace?.enabled == true ? movementSpace : null
         };
+    }
+
+    void OnTriggerStay2D(Collider2D other)
+    {
+        if (IsPlayerHand(other) && other.transform.IsChildOf(coverSpace.transform))
+        {
+            Debug.Log("Touching coverSpace collider.");
+        }
     }
     #endregion
 
@@ -330,32 +337,36 @@ public class OtherHand : MonoBehaviour
     #region Event Handlers
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (IsPlayerHand(other))
+        if (!IsPlayerHand(other)) return;
+
+        // Skip if the collision is with cover space
+        if (other.transform.IsChildOf(coverSpace.transform)) return;
+
+        if (other.transform.IsChildOf(personalSpace.transform))
         {
-            if (other.transform.IsChildOf(personalSpace.transform))
-            {
-                isInPersonalSpace = true;
-            }
-            else if (other.transform.IsChildOf(recoilSpace.transform))
-            {
-                isInRecoilSpace = true;
-                if (logCollisions) Debug.Log("Recoil push activated!");
-            }
+            isInPersonalSpace = true;
+        }
+        else if (other.transform.IsChildOf(recoilSpace.transform))
+        {
+            isInRecoilSpace = true;
+            if (logCollisions) Debug.Log("Recoil push activated!");
         }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (IsPlayerHand(other))
+        if (!IsPlayerHand(other)) return;
+
+        // Skip if the collision is with cover space
+        if (other.transform.IsChildOf(coverSpace.transform)) return;
+
+        if (other.transform.IsChildOf(personalSpace.transform))
         {
-            if (other.transform.IsChildOf(personalSpace.transform))
-            {
-                isInPersonalSpace = false;
-            }
-            else if (other.transform.IsChildOf(recoilSpace.transform))
-            {
-                isInRecoilSpace = false;
-            }
+            isInPersonalSpace = false;
+        }
+        else if (other.transform.IsChildOf(recoilSpace.transform))
+        {
+            isInRecoilSpace = false;
         }
     }
     #endregion
