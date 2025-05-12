@@ -43,6 +43,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Tabletop
+    uniqueID: 2639312035
+    locked: 0
   - name: BackHand
     uniqueID: 2324909861
     locked: 0

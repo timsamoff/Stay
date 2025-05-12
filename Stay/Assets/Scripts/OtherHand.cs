@@ -32,7 +32,6 @@ public class OtherHand : MonoBehaviour
 
     [Header("Collision Bounds")]
     [SerializeField] private float otherHandWidth = 1f;
-    // [SerializeField] private float collisionOffset = 0.1f;
     private CircleCollider2D playerHandCollider;
     private float playerLeftBound;
 
@@ -45,7 +44,7 @@ public class OtherHand : MonoBehaviour
     // Colliders
     private CircleCollider2D personalSpace;
     private CircleCollider2D recoilSpace;
-    private CircleCollider2D coverSpace;
+    private BoxCollider2D coverSpace; // Changed to BoxCollider2D
     private CircleCollider2D movementSpace;
 
     // Movement
@@ -79,6 +78,9 @@ public class OtherHand : MonoBehaviour
 
     private void Start()
     {
+        isInPersonalSpace = false;
+        isInRecoilSpace = false;
+
         playerHandCollider = playerHand.GetComponent<CircleCollider2D>();
         if (playerHandCollider == null)
         {
@@ -94,7 +96,7 @@ public class OtherHand : MonoBehaviour
 
         CreateProximityCollider(ref personalSpace, personalSpaceRadius, "PersonalSpace");
         CreateProximityCollider(ref recoilSpace, recoilSpaceRadius, "RecoilSpace", recoilSpaceVerticalOffset);
-        CreateProximityCollider(ref coverSpace, coverSpaceRadius, "CoverSpace", coverSpaceVerticalOffset);
+        CreateBoxProximityCollider(ref coverSpace, coverSpaceRadius, "CoverSpace", coverSpaceVerticalOffset);
 
         coverSpace.enabled = true;
         personalSpace.enabled = true;
@@ -105,6 +107,10 @@ public class OtherHand : MonoBehaviour
     {
         HandleShrinkingAnimation();
         CalculatePlayerColliderBounds();
+
+        // Force-disable movement states if colliders are disabled
+        if (!personalSpace.enabled) isInPersonalSpace = false;
+        if (!recoilSpace.enabled) isInRecoilSpace = false;
 
         if (continuousDetection)
         {
@@ -137,6 +143,10 @@ public class OtherHand : MonoBehaviour
             {
                 personalSpace.enabled = false;
                 if (recoilSpace != null) recoilSpace.enabled = false;
+
+                isInPersonalSpace = false;
+                isInRecoilSpace = false;
+
                 shrinking = false;
                 movementPending = true;
                 movementDelayTimer = 0f;
@@ -171,6 +181,61 @@ public class OtherHand : MonoBehaviour
     }
     #endregion
 
+    #region Collider Management
+    private void CreateProximityCollider(ref CircleCollider2D col, float radius, string name, float verticalOffset = 0f)
+    {
+        var sensor = new GameObject(name)
+        {
+            transform =
+            {
+                parent = transform,
+                localPosition = new Vector3(0, verticalOffset, 0)
+            }
+        };
+
+        col = sensor.AddComponent<CircleCollider2D>();
+        col.isTrigger = true;
+        col.radius = radius;
+
+        var rb = sensor.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+    }
+
+    private void CreateBoxProximityCollider(ref BoxCollider2D col, float size, string name, float verticalOffset = 0f)
+    {
+        var sensor = new GameObject(name)
+        {
+            transform =
+            {
+                parent = transform,
+                localPosition = new Vector3(0, verticalOffset, 0)
+            }
+        };
+
+        col = sensor.AddComponent<BoxCollider2D>();
+        col.isTrigger = true;
+        col.size = new Vector2(size, size);
+
+        var rb = sensor.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+    }
+
+    private void CalculatePlayerColliderBounds()
+    {
+        if (playerHandCollider != null)
+        {
+            Vector2 colliderCenter = playerHand.transform.TransformPoint(playerHandCollider.offset);
+            float worldRadius = playerHandCollider.radius * Mathf.Max(
+                playerHand.transform.lossyScale.x,
+                playerHand.transform.lossyScale.y
+            );
+            playerLeftBound = colliderCenter.x - worldRadius;
+        }
+    }
+    #endregion
+
     #region Collision Detection
     private void CheckContinuousOverlaps()
     {
@@ -179,31 +244,23 @@ public class OtherHand : MonoBehaviour
 
         foreach (var collider in GetActiveColliders())
         {
-            if (collider == null || collider == coverSpace) continue; // Skip cover space
+            if (collider == null || collider == coverSpace) continue;
 
             int hits = Physics2D.OverlapCollider(collider, contactFilter, overlapResults);
-            bool playerInZone = false;
 
             for (int i = 0; i < hits; i++)
             {
                 if (IsPlayerHand(overlapResults[i]))
                 {
-                    playerInZone = true;
                     if (collider == personalSpace) isInPersonalSpace = true;
                     if (collider == recoilSpace) isInRecoilSpace = true;
 
                     if (logCollisions)
                     {
                         Debug.Log($"[Continuous] Player in {GetColliderName(collider)}", this);
-                        VisualizeCollision(collider, Color.magenta);
                     }
-                    break;
+                    break;  
                 }
-            }
-
-            if (!playerInZone && logCollisions)
-            {
-                Debug.Log($"[Continuous] Player left {GetColliderName(collider)}", this);
             }
         }
     }
@@ -212,18 +269,10 @@ public class OtherHand : MonoBehaviour
     {
         return new[]
         {
-        personalSpace?.enabled == true ? personalSpace : null,
-        recoilSpace?.enabled == true ? recoilSpace : null,
-        movementSpace?.enabled == true ? movementSpace : null
+            personalSpace?.enabled == true ? personalSpace : null,
+            recoilSpace?.enabled == true ? recoilSpace : null,
+            movementSpace?.enabled == true ? movementSpace : null
         };
-    }
-
-    void OnTriggerStay2D(Collider2D other)
-    {
-        if (IsPlayerHand(other) && other.transform.IsChildOf(coverSpace.transform))
-        {
-            Debug.Log("Touching coverSpace collider.");
-        }
     }
     #endregion
 
@@ -233,16 +282,14 @@ public class OtherHand : MonoBehaviour
         float otherHandLeftEdge = transform.position.x - (otherHandWidth * 0.5f * transform.localScale.x);
         float otherHandRightEdge = transform.position.x + (otherHandWidth * 0.5f * transform.localScale.x);
 
-        // Push speed
-        float currentPushSpeed = pushSpeed;
-        if (isInRecoilSpace)
-        {
-            currentPushSpeed *= recoilPushMultiplier;
-            if (logCollisions) Debug.Log($"Recoil speed: {currentPushSpeed}");
-        }
+        bool shouldMove = (personalSpace.enabled && isInPersonalSpace) ||
+                         (recoilSpace.enabled && isInRecoilSpace);
 
-        if ((isInPersonalSpace || isInRecoilSpace) && playerHand != null)
+        if (shouldMove && playerHand != null)
         {
+            float currentPushSpeed = pushSpeed;
+            if (isInRecoilSpace) currentPushSpeed *= recoilPushMultiplier;
+
             float distanceX = Mathf.Abs(playerLeftBound - otherHandRightEdge);
             float activeRadius = isInRecoilSpace ? recoilSpace.radius : personalSpace.radius;
 
@@ -289,48 +336,7 @@ public class OtherHand : MonoBehaviour
             movementSmoothing
         );
 
-        float finalRightEdge = newPosition.x + (otherHandWidth * 0.5f * transform.localScale.x);
-        if (finalRightEdge > playerLeftBound)
-        {
-            newPosition.x = playerLeftBound - (otherHandWidth * 0.5f * transform.localScale.x);
-        }
-
         transform.position = newPosition;
-    }
-    #endregion
-
-    #region Collider Management
-    private void CreateProximityCollider(ref CircleCollider2D col, float radius, string name, float verticalOffset = 0f)
-    {
-        var sensor = new GameObject(name)
-        {
-            transform =
-            {
-                parent = transform,
-                localPosition = new Vector3(0, verticalOffset, 0)
-            }
-        };
-
-        col = sensor.AddComponent<CircleCollider2D>();
-        col.isTrigger = true;
-        col.radius = radius;
-
-        var rb = sensor.AddComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Kinematic;
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-    }
-
-    private void CalculatePlayerColliderBounds()
-    {
-        if (playerHandCollider != null)
-        {
-            Vector2 colliderCenter = playerHand.transform.TransformPoint(playerHandCollider.offset);
-            float worldRadius = playerHandCollider.radius * Mathf.Max(
-                playerHand.transform.lossyScale.x,
-                playerHand.transform.lossyScale.y
-            );
-            playerLeftBound = colliderCenter.x - worldRadius;
-        }
     }
     #endregion
 
@@ -338,27 +344,22 @@ public class OtherHand : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!IsPlayerHand(other)) return;
+        if (other.gameObject == coverSpace.gameObject) return;
 
-        // Skip if the collision is with cover space
-        if (other.transform.IsChildOf(coverSpace.transform)) return;
-
-        if (other.transform.IsChildOf(personalSpace.transform))
+        if (personalSpace.enabled && other.transform.IsChildOf(personalSpace.transform))
         {
             isInPersonalSpace = true;
         }
-        else if (other.transform.IsChildOf(recoilSpace.transform))
+        else if (recoilSpace.enabled && other.transform.IsChildOf(recoilSpace.transform))
         {
             isInRecoilSpace = true;
-            if (logCollisions) Debug.Log("Recoil push activated!");
         }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!IsPlayerHand(other)) return;
-
-        // Skip if the collision is with cover space
-        if (other.transform.IsChildOf(coverSpace.transform)) return;
+        if (other.gameObject == coverSpace.gameObject) return;
 
         if (other.transform.IsChildOf(personalSpace.transform))
         {
@@ -386,12 +387,6 @@ public class OtherHand : MonoBehaviour
         if (collider == coverSpace) return "Cover Space";
         if (collider == movementSpace) return "Movement Space";
         return "Unknown Space";
-    }
-
-    private void VisualizeCollision(Component source, Color color)
-    {
-        Debug.DrawLine(transform.position, source.transform.position, color, detectionInterval);
-        Debug.DrawRay(source.transform.position, Vector2.up * 0.5f, color, detectionInterval);
     }
     #endregion
 
@@ -421,8 +416,6 @@ public class OtherHand : MonoBehaviour
                        new Vector3(otherHandLeft, currentPos.y + 1, 0));
         Gizmos.DrawLine(new Vector3(otherHandRight, currentPos.y - 1, 0),
                        new Vector3(otherHandRight, currentPos.y + 1, 0));
-        Gizmos.DrawLine(new Vector3(otherHandLeft, currentPos.y, 0),
-                       new Vector3(otherHandRight, currentPos.y, 0));
 
         // PlayerHand's left edge
         if (playerHand != null && playerHandCollider != null)
@@ -433,37 +426,22 @@ public class OtherHand : MonoBehaviour
         }
 
         // Draw colliders
-        if (!Application.isPlaying)
+        if (coverSpace != null)
         {
-            Gizmos.color = new Color(1, 1, 0, 0.3f);
-            Gizmos.DrawWireSphere(currentPos, personalSpaceRadius);
-
-            Gizmos.color = new Color(1, 0, 0, 0.3f);
-            Gizmos.DrawWireSphere(currentPos + Vector2.up * recoilSpaceVerticalOffset, recoilSpaceRadius);
-
-            Gizmos.color = new Color(0, 1, 0, 0.3f);
-            Gizmos.DrawWireSphere(currentPos + Vector2.up * coverSpaceVerticalOffset, coverSpaceRadius);
+            Gizmos.color = new Color(0, 1, 0, 0.5f);
+            Gizmos.DrawWireCube(coverSpace.transform.position, coverSpace.size);
         }
 
-        if (Application.isPlaying)
+        if (personalSpace != null && personalSpace.enabled)
         {
-            if (personalSpace != null && personalSpace.enabled)
-            {
-                Gizmos.color = new Color(1, 1, 0, 0.5f);
-                Gizmos.DrawWireSphere(personalSpace.transform.position, personalSpace.radius);
-            }
+            Gizmos.color = new Color(1, 1, 0, 0.5f);
+            Gizmos.DrawWireSphere(personalSpace.transform.position, personalSpace.radius);
+        }
 
-            if (recoilSpace != null && recoilSpace.enabled)
-            {
-                Gizmos.color = new Color(1, 0, 0, 0.5f);
-                Gizmos.DrawWireSphere(recoilSpace.transform.position, recoilSpace.radius);
-            }
-
-            if (coverSpace != null && coverSpace.enabled)
-            {
-                Gizmos.color = new Color(0, 1, 0, 0.5f);
-                Gizmos.DrawWireSphere(coverSpace.transform.position, coverSpace.radius);
-            }
+        if (recoilSpace != null && recoilSpace.enabled)
+        {
+            Gizmos.color = new Color(1, 0, 0, 0.5f);
+            Gizmos.DrawWireSphere(recoilSpace.transform.position, recoilSpace.radius);
         }
 
         if (originalPosition != Vector2.zero)
