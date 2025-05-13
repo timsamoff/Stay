@@ -105,7 +105,7 @@ MonoBehaviour:
   personalSpaceRadius: 6
   recoilSpaceRadius: 2.5
   coverSpaceRadius: 1
-  shrinkSpeed: 0.5
+  shrinkSpeedRange: {x: 0.1, y: 0.5}
   recoilSpaceVerticalOffset: 1
   coverSpaceVerticalOffset: 1
   pushSpeed: 5
@@ -113,14 +113,26 @@ MonoBehaviour:
   recoilPushMultiplier: 10
   movementSmoothing: 0.1
   maxDistanceFromOrigin: 10
+  otherHandApproachSpeed: 1
+  movementSpaceShrinkSpeed: 0.5
+  returnToOriginSpeed: 2
+  defaultSortingLayer: BackHand
+  coveringSortingLayer: CoverHand
+  movementSpaceColor: {r: 1, g: 0, b: 1, a: 0.5}
+  coverSpaceContactOffset: 0.1
   movementDelay: 2
   playerHand: {fileID: 0}
   playerHandLayer:
     serializedVersion: 2
     m_Bits: 64
   otherHandWidth: 5
+  movementStopDelay: 1
+  winDelay: 3
+  gameSession: {fileID: 0}
+  lossAnimationDuration: 2
+  recoilSounds: []
+  audioSource: {fileID: 0}
   visualizeColliders: 1
-  logCollisions: 1
   continuousDetection: 1
   detectionInterval: 0.1
 --- !u!50 &4213059927209362088

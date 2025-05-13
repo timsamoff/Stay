@@ -23,6 +23,15 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float movementSmoothing = 0.1f;
     [SerializeField] private float maxDistanceFromOrigin = 10f;
 
+    [Header("Movement Space Settings")]
+    [SerializeField] private float otherHandApproachSpeed = 1.0f;
+    [SerializeField] private float movementSpaceShrinkSpeed = 0.5f;
+    [SerializeField] private float returnToOriginSpeed = 2.0f;
+    [SerializeField] private string defaultSortingLayer = "BackHand";
+    [SerializeField] private string coveringSortingLayer = "CoverHand";
+    [SerializeField] private Color movementSpaceColor = new Color(1, 0, 1, 0.5f);
+    [SerializeField] private float coverSpaceContactOffset = 0.1f;
+
     private float currentEffectivePushSpeed;
 
     [Header("Timing")]
@@ -41,19 +50,15 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float movementStopDelay = 1f;
     [SerializeField] private float winDelay = 3f;
     [SerializeField] private GameSession gameSession;
-    
+
     private bool playerHandStopped = false;
     private float coverTime = 0f;
     private bool isCoveringCoverSpace = false;
 
     [Header("Loss Condition")]
     [SerializeField] private float lossAnimationDuration = 2f;
-    
-    private bool isLossTriggered = false;
 
-    /* [Header("Loss Animation")]
-    [SerializeField] private Animator animator;
-    [SerializeField] private string lossAnimationTrigger = "Lose"; */
+    private bool isLossTriggered = false;
 
     [Header("Recoil Sounds")]
     [SerializeField] private AudioClip[] recoilSounds;
@@ -88,6 +93,14 @@ public class OtherHand : MonoBehaviour
     private readonly Collider2D[] overlapResults = new Collider2D[5];
     private ContactFilter2D contactFilter;
 
+    // Visuals
+    private SpriteRenderer spriteRenderer;
+    private SpriteRenderer movementSpaceVisual;
+    private Vector2 movementSpaceOriginalPosition;
+    private bool isMovingTowardPlayer = false;
+    private float originalMovementRadius;
+    private bool hasReachedPlayer = false;
+
     private void Awake()
     {
         contactFilter = new ContactFilter2D().NoFilter();
@@ -98,12 +111,13 @@ public class OtherHand : MonoBehaviour
         var rb = GetComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void Start()
     {
         shrinkSpeed = Random.Range(shrinkSpeedRange.x, shrinkSpeedRange.y);
-
         Debug.Log($"Shrink speed: {shrinkSpeed}");
 
         isInPersonalSpace = false;
@@ -162,12 +176,10 @@ public class OtherHand : MonoBehaviour
                 }
             }
 
-            // Time while covering
             if (isCoveringCoverSpace)
             {
                 coverTime += Time.deltaTime;
 
-                // Stop movement first
                 if (coverTime >= movementStopDelay && !playerHandStopped)
                 {
                     playerHand.MovementEnabled = false;
@@ -175,13 +187,12 @@ public class OtherHand : MonoBehaviour
                     Debug.Log("PlayerHand movement stopped");
                 }
 
-                // Then trigger win after longer delay
                 if (coverTime >= winDelay && gameSession != null)
                 {
                     gameSession.TriggerWin();
                     coverTime = 0f;
                     isCoveringCoverSpace = false;
-                    playerHandStopped = false; // Reset for next time
+                    playerHandStopped = false;
                 }
             }
             else
@@ -201,14 +212,169 @@ public class OtherHand : MonoBehaviour
             {
                 detectionTimer = 0f;
                 CheckContinuousOverlaps();
+                CheckMovementSpaceInteraction();
             }
         }
+
+        HandleMovementSpaceBehavior();
     }
 
     private void FixedUpdate()
     {
         HandleMovement();
     }
+
+    #region Movement Space Logic
+    private void HandleMovementSpaceBehavior()
+    {
+        if (movementSpace != null && movementSpace.enabled)
+        {
+            // Update movement space visualization
+            if (movementSpaceVisual != null)
+            {
+                movementSpaceVisual.size = new Vector2(movementSpace.radius * 2, movementSpace.radius * 2);
+            }
+
+            int hits = Physics2D.OverlapCollider(movementSpace, contactFilter, overlapResults);
+            bool playerInMovementSpace = false;
+
+            for (int i = 0; i < hits; i++)
+            {
+                if (IsPlayerHand(overlapResults[i]))
+                {
+                    playerInMovementSpace = true;
+                    break;
+                }
+            }
+
+            if (playerInMovementSpace)
+            {
+                Debug.Log("Player touched movement space");
+                ResetMovementSpace();
+                return;
+            }
+
+            if (!isMovingTowardPlayer)
+            {
+                isMovingTowardPlayer = true;
+                movementSpaceOriginalPosition = transform.position;
+                SetSortingLayer(coveringSortingLayer);
+                Debug.Log("Started moving toward player");
+            }
+
+            // Smooth movement toward player
+            float step = otherHandApproachSpeed * Time.deltaTime;
+            Vector2 targetPos = new Vector2(
+                playerHand.transform.position.x,
+                transform.position.y
+            );
+            transform.position = Vector2.MoveTowards(transform.position, targetPos, step);
+        }
+        else if (isMovingTowardPlayer && !hasReachedPlayer)
+        {
+            // Continue moving until cover space makes contact
+            float step = otherHandApproachSpeed * Time.deltaTime;
+            Vector2 targetPos = new Vector2(
+                playerHand.transform.position.x,
+                transform.position.y
+            );
+
+            // Check if contact point is reached
+            float distanceToPlayer = Vector2.Distance(transform.position, targetPos);
+            if (distanceToPlayer <= coverSpaceContactOffset)
+            {
+                hasReachedPlayer = true;
+                Debug.Log("Reached player contact point");
+            }
+            else
+            {
+                transform.position = Vector2.MoveTowards(transform.position, targetPos, step);
+            }
+        }
+    }
+
+    private IEnumerator SmoothReturnToOriginalPosition()
+    {
+        if (movementSpace != null)
+        {
+            if (movementSpaceVisual != null)
+            {
+                Destroy(movementSpaceVisual.gameObject);
+            }
+            Destroy(movementSpace.gameObject);
+            movementSpace = null;
+            movementSpaceVisual = null;
+        }
+
+        isMovingTowardPlayer = false;
+        hasReachedPlayer = false;
+        movementShrinking = false;
+        movementPending = false;
+
+        float distance = Vector2.Distance(transform.position, originalPosition);
+        float duration = distance / returnToOriginSpeed;
+        float elapsedTime = 0f;
+        Vector2 startPosition = transform.position;
+
+        while (elapsedTime < duration)
+        {
+            transform.position = Vector2.Lerp(
+                startPosition,
+                originalPosition,
+                elapsedTime / duration
+            );
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.position = originalPosition;
+        SetSortingLayer(defaultSortingLayer);
+
+        personalSpace.enabled = true;
+        recoilSpace.enabled = true;
+        personalSpace.radius = originalPersonalRadius;
+        recoilSpace.radius = recoilSpaceRadius;
+        shrinking = true;
+    }
+
+    private void SetSortingLayer(string layerName)
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingLayerName = layerName;
+        }
+
+        foreach (Transform child in transform)
+        {
+            var childRenderer = child.GetComponent<SpriteRenderer>();
+            if (childRenderer != null)
+            {
+                childRenderer.sortingLayerName = layerName;
+            }
+        }
+    }
+
+    private void CheckMovementSpaceInteraction()
+    {
+        if (movementSpace != null && movementSpace.enabled)
+        {
+            int hits = Physics2D.OverlapCollider(movementSpace, contactFilter, overlapResults);
+            for (int i = 0; i < hits; i++)
+            {
+                if (IsPlayerHand(overlapResults[i]))
+                {
+                    ResetMovementSpace();
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ResetMovementSpace()
+    {
+        StartCoroutine(SmoothReturnToOriginalPosition());
+    }
+    #endregion
 
     #region Animation Logic
     private void HandleShrinkingAnimation()
@@ -217,20 +383,17 @@ public class OtherHand : MonoBehaviour
         {
             if (isInPersonalSpace)
             {
-                // Reset both spaces to original size when touched
                 personalSpace.radius = originalPersonalRadius;
                 recoilSpace.radius = recoilSpaceRadius;
                 return;
             }
 
-            // Shrink personal space using the randomized shrinkSpeed
             personalSpace.radius = Mathf.MoveTowards(
                 personalSpace.radius,
                 coverSpaceRadius,
                 shrinkSpeed * Time.deltaTime
             );
 
-            // When personal space reaches recoil space size, shrink recoil space too
             if (personalSpace.radius <= recoilSpaceRadius && recoilSpace != null)
             {
                 recoilSpace.radius = Mathf.MoveTowards(
@@ -240,7 +403,6 @@ public class OtherHand : MonoBehaviour
                 );
             }
 
-            // Disable when both reach cover space size
             if (personalSpace.radius <= coverSpaceRadius &&
                 (recoilSpace == null || recoilSpace.radius <= coverSpaceRadius))
             {
@@ -262,8 +424,11 @@ public class OtherHand : MonoBehaviour
             if (movementDelayTimer >= movementDelay)
             {
                 CreateProximityCollider(ref movementSpace, originalPersonalRadius, "MovementSpace");
+                originalMovementRadius = originalPersonalRadius;
                 movementShrinking = true;
                 movementPending = false;
+                movementSpaceOriginalPosition = transform.position;
+                Debug.Log("Movement space created");
             }
         }
 
@@ -272,13 +437,19 @@ public class OtherHand : MonoBehaviour
             movementSpace.radius = Mathf.MoveTowards(
                 movementSpace.radius,
                 coverSpaceRadius,
-                shrinkSpeed * Time.deltaTime
+                movementSpaceShrinkSpeed * Time.deltaTime
             );
+
+            if (movementSpaceVisual != null)
+            {
+                movementSpaceVisual.size = new Vector2(movementSpace.radius * 2, movementSpace.radius * 2);
+            }
 
             if (movementSpace.radius <= coverSpaceRadius)
             {
                 movementSpace.enabled = false;
                 movementShrinking = false;
+                Debug.Log("Movement space completed");
             }
         }
     }
@@ -299,6 +470,21 @@ public class OtherHand : MonoBehaviour
         col = sensor.AddComponent<CircleCollider2D>();
         col.isTrigger = true;
         col.radius = radius;
+
+        // Visualization for movement space
+        if (name == "MovementSpace")
+        {
+            movementSpaceVisual = sensor.AddComponent<SpriteRenderer>();
+            movementSpaceVisual.sprite = Sprite.Create(
+                new Texture2D(1, 1),
+                new Rect(0, 0, 1, 1),
+                new Vector2(0.5f, 0.5f)
+            );
+            movementSpaceVisual.color = movementSpaceColor;
+            movementSpaceVisual.drawMode = SpriteDrawMode.Sliced;
+            movementSpaceVisual.size = new Vector2(radius * 2, radius * 2);
+            movementSpaceVisual.sortingLayerName = "Debug";
+        }
 
         var rb = sensor.AddComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Kinematic;
@@ -359,7 +545,7 @@ public class OtherHand : MonoBehaviour
                     if (collider == recoilSpace && !isLossTriggered)
                     {
                         isInRecoilSpace = true;
-                        PlayRandomRecoilSound(); // New sound playback
+                        PlayRandomRecoilSound();
                         TriggerLossSequence();
                     }
                     break;
@@ -382,6 +568,8 @@ public class OtherHand : MonoBehaviour
     #region Movement Logic
     private void HandleMovement()
     {
+        if (isMovingTowardPlayer) return;
+
         float otherHandLeftEdge = transform.position.x - (otherHandWidth * 0.5f * transform.localScale.x);
         float otherHandRightEdge = transform.position.x + (otherHandWidth * 0.5f * transform.localScale.x);
 
@@ -466,41 +654,21 @@ public class OtherHand : MonoBehaviour
 
         isLossTriggered = true;
 
-        // Disable game mechanics
         shrinking = false;
         movementPending = false;
         movementShrinking = false;
 
-        // Disable all colliders
         personalSpace?.gameObject.SetActive(false);
         recoilSpace?.gameObject.SetActive(false);
         coverSpace?.gameObject.SetActive(false);
         movementSpace?.gameObject.SetActive(false);
 
-        // Start the loss sequence
         StartCoroutine(PlayLossAnimationAndTriggerLoss());
     }
 
     private IEnumerator PlayLossAnimationAndTriggerLoss()
     {
-        /* if (animator != null)
-        {
-            animator.SetTrigger(lossAnimationTrigger);
-
-            // Wait for animation to complete
-            yield return new WaitForSeconds(lossAnimationDuration);
-
-            // Alternative: Wait for animation state to complete
-            // yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f);
-        }
-        else
-        {
-            // No animator, just wait the duration
-            yield return new WaitForSeconds(lossAnimationDuration);
-        } */
-
-        yield return new WaitForSeconds(lossAnimationDuration); // Remove this once the animation is made
-
+        yield return new WaitForSeconds(lossAnimationDuration);
         Debug.Log("Triggering loss condition now!");
         gameSession.TriggerLoss();
     }
@@ -558,6 +726,12 @@ public class OtherHand : MonoBehaviour
         {
             Gizmos.color = new Color(1, 0, 0, 0.5f);
             Gizmos.DrawWireSphere(recoilSpace.transform.position, recoilSpace.radius);
+        }
+
+        if (movementSpace != null && movementSpace.enabled)
+        {
+            Gizmos.color = new Color(1, 0, 1, 0.5f);
+            Gizmos.DrawWireSphere(movementSpace.transform.position, movementSpace.radius);
         }
 
         if (originalPosition != Vector2.zero)

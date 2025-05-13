@@ -6,6 +6,7 @@ TagManager:
   tags:
   - PlayerHand
   - OtherHand
+  - Otherhand
   layers:
   - Default
   - TransparentFX
@@ -51,6 +52,12 @@ TagManager:
     locked: 0
   - name: FrontHand
     uniqueID: 1321679769
+    locked: 0
+  - name: CoverHand
+    uniqueID: 3947859505
+    locked: 0
+  - name: Debug
+    uniqueID: 1456854883
     locked: 0
   m_RenderingLayers:
   - Default
