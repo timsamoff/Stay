@@ -8,6 +8,7 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private float fadeDuration = 2f;
     [SerializeField] private string startSceneName = "StayMain";
     [SerializeField] private string aboutSceneName = "About";
+    [SerializeField] private string menuSceneName = "MainMenu";
 
     private void Start()
     {
@@ -29,6 +30,11 @@ public class MainMenu : MonoBehaviour
     public void About()
     {
         StartCoroutine(FadeOutAndLoadScene(aboutSceneName));
+    }
+
+    public void Menu()
+    {
+        StartCoroutine(FadeOutAndLoadScene(menuSceneName));
     }
 
     private IEnumerator FadeIn()
