@@ -8,10 +8,18 @@ public class PlayerHand : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Camera mainCamera;
 
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip[] movementSounds;
+    [SerializeField] private float soundCooldown = 0.1f;
+    [SerializeField] private float minSpeedForSound = 1f;
+    [SerializeField] private AudioSource audioSource;
+
     private Vector3 velocity;
     private float currentSpeed;
     private float maxAllowedY; // The highest Y position where hand bottom touches screen bottom
     private float handBottomOffset;
+    private float lastSoundTime;
+    private Vector3 lastPosition;
 
     private void Start()
     {
@@ -21,6 +29,11 @@ public class PlayerHand : MonoBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
         // Calculate hand's bottom offset from its pivot
         handBottomOffset = transform.position.y - spriteRenderer.bounds.min.y;
 
@@ -29,12 +42,16 @@ public class PlayerHand : MonoBehaviour
         maxAllowedY = screenBottomWorldY + handBottomOffset;
 
         Cursor.visible = false;
+        lastPosition = transform.position;
 
         Debug.Log($"Hand initialized - Bottom Offset: {handBottomOffset} | Max Allowed Y: {maxAllowedY}");
     }
 
     private void Update()
     {
+        // Store previous position for movement detection
+        Vector3 previousPosition = transform.position;
+
         // Get input direction
         Vector3 inputDirection = new Vector3(
             Input.GetAxisRaw("Mouse X"),
@@ -64,6 +81,34 @@ public class PlayerHand : MonoBehaviour
         // Apply movement
         transform.position = newPosition;
         currentSpeed = velocity.magnitude;
+
+        TryPlayMovementSound(previousPosition, newPosition);
+    }
+
+    private void TryPlayMovementSound(Vector3 oldPosition, Vector3 newPosition)
+    {
+        if (movementSounds == null || movementSounds.Length == 0 || currentSpeed < minSpeedForSound)
+            return;
+
+        if (Vector3.Distance(oldPosition, newPosition) > 0.01f && Time.time - lastSoundTime > soundCooldown)
+        {
+            PlayRandomSound();
+            lastSoundTime = Time.time;
+        }
+    }
+
+    private void PlayRandomSound()
+    {
+        if (movementSounds.Length == 0 || audioSource == null)
+            return;
+
+        int randomIndex = Random.Range(0, movementSounds.Length);
+        AudioClip clip = movementSounds[randomIndex];
+
+        if (clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 
     public float GetCurrentSpeed()
