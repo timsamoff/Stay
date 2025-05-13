@@ -21,7 +21,6 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float maxDistanceFromOrigin = 10f;
 
     private float currentEffectivePushSpeed;
-    private bool isInRecoilSpace;
 
     [Header("Timing")]
     [SerializeField] private float movementDelay = 2f;
@@ -37,14 +36,13 @@ public class OtherHand : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool visualizeColliders = true;
-    [SerializeField] private bool logCollisions = true;
     [SerializeField] private bool continuousDetection = true;
     [SerializeField] private float detectionInterval = 0.1f;
 
     // Colliders
     private CircleCollider2D personalSpace;
     private CircleCollider2D recoilSpace;
-    private BoxCollider2D coverSpace; // Changed to BoxCollider2D
+    private BoxCollider2D coverSpace;
     private CircleCollider2D movementSpace;
 
     // Movement
@@ -52,6 +50,7 @@ public class OtherHand : MonoBehaviour
     private Vector2 targetPosition;
     private Vector2 currentVelocity;
     private bool isInPersonalSpace;
+    private bool isInRecoilSpace;
     private Rigidbody2D playerHandRb;
 
     // States
@@ -108,7 +107,6 @@ public class OtherHand : MonoBehaviour
         HandleShrinkingAnimation();
         CalculatePlayerColliderBounds();
 
-        // Force-disable movement states if colliders are disabled
         if (!personalSpace.enabled) isInPersonalSpace = false;
         if (!recoilSpace.enabled) isInRecoilSpace = false;
 
@@ -133,13 +131,34 @@ public class OtherHand : MonoBehaviour
     {
         if (shrinking && personalSpace != null)
         {
+            if (isInPersonalSpace)
+            {
+                // Reset both spaces to original size when touched
+                personalSpace.radius = originalPersonalRadius;
+                recoilSpace.radius = recoilSpaceRadius;
+                return;
+            }
+
+            // Shrink personal space
             personalSpace.radius = Mathf.MoveTowards(
                 personalSpace.radius,
                 coverSpaceRadius,
                 shrinkSpeed * Time.deltaTime
             );
 
-            if (personalSpace.radius <= coverSpaceRadius)
+            // When personal space reaches recoil space size, shrink recoil space too
+            if (personalSpace.radius <= recoilSpaceRadius && recoilSpace != null)
+            {
+                recoilSpace.radius = Mathf.MoveTowards(
+                    recoilSpace.radius,
+                    coverSpaceRadius,
+                    shrinkSpeed * Time.deltaTime
+                );
+            }
+
+            // Disable when both reach cover space size
+            if (personalSpace.radius <= coverSpaceRadius &&
+                (recoilSpace == null || recoilSpace.radius <= coverSpaceRadius))
             {
                 personalSpace.enabled = false;
                 if (recoilSpace != null) recoilSpace.enabled = false;
@@ -254,12 +273,7 @@ public class OtherHand : MonoBehaviour
                 {
                     if (collider == personalSpace) isInPersonalSpace = true;
                     if (collider == recoilSpace) isInRecoilSpace = true;
-
-                    if (logCollisions)
-                    {
-                        Debug.Log($"[Continuous] Player in {GetColliderName(collider)}", this);
-                    }
-                    break;  
+                    break;
                 }
             }
         }
@@ -340,53 +354,12 @@ public class OtherHand : MonoBehaviour
     }
     #endregion
 
-    #region Event Handlers
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!IsPlayerHand(other)) return;
-        if (other.gameObject == coverSpace.gameObject) return;
-
-        if (personalSpace.enabled && other.transform.IsChildOf(personalSpace.transform))
-        {
-            isInPersonalSpace = true;
-        }
-        else if (recoilSpace.enabled && other.transform.IsChildOf(recoilSpace.transform))
-        {
-            isInRecoilSpace = true;
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (!IsPlayerHand(other)) return;
-        if (other.gameObject == coverSpace.gameObject) return;
-
-        if (other.transform.IsChildOf(personalSpace.transform))
-        {
-            isInPersonalSpace = false;
-        }
-        else if (other.transform.IsChildOf(recoilSpace.transform))
-        {
-            isInRecoilSpace = false;
-        }
-    }
-    #endregion
-
     #region Helper Methods
     private bool IsPlayerHand(Collider2D other)
     {
         if (playerHand != null && other.gameObject == playerHand) return true;
         return playerHandLayer.value != 0 &&
                (playerHandLayer.value & (1 << other.gameObject.layer)) != 0;
-    }
-
-    private string GetColliderName(Collider2D collider)
-    {
-        if (collider == personalSpace) return "Personal Space";
-        if (collider == recoilSpace) return "Recoil Space";
-        if (collider == coverSpace) return "Cover Space";
-        if (collider == movementSpace) return "Movement Space";
-        return "Unknown Space";
     }
     #endregion
 
