@@ -4,72 +4,63 @@ using System.Collections;
 
 public class GameSession : MonoBehaviour
 {
-    public static GameSession Instance;
-
-    [Header("Fade Settings")]
+    [Header("Screen Fade")]
     [SerializeField] private CanvasGroup fadeCanvasGroup;
     [SerializeField] private float fadeDuration = 2f;
     [SerializeField] private string winScene = "Win";
     [SerializeField] private string loseScene = "Lose";
 
-    private bool isTransitioning;
+    [Header("Music Fade")]
+    [SerializeField] private float musicFadeTime = 2f;
+    [SerializeField][Range(0, 1)] private float musicMaxVolume = 0.25f;
+    private AudioSource backgroundMusic;
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        backgroundMusic = GetComponent<AudioSource>();
+        backgroundMusic.volume = 0f; // Start silent
+        fadeCanvasGroup.alpha = 1f; // Start black
+        fadeCanvasGroup.gameObject.SetActive(true);
     }
 
     private void Start()
     {
-        // Start with screen black and fade in
-        fadeCanvasGroup.alpha = 1f;
-        fadeCanvasGroup.blocksRaycasts = true;
-        StartCoroutine(Fade(1f, 0f)); // Fade from black to clear
+        StartCoroutine(FadeAudio(0f, musicMaxVolume, musicFadeTime)); // Use musicMaxVolume
+        StartCoroutine(FadeVisuals(1f, 0f, fadeDuration));
     }
 
-    public void TriggerWin()
+    public void TriggerWin() => StartCoroutine(EndGame(winScene));
+    public void TriggerLoss() => StartCoroutine(EndGame(loseScene));
+
+    private IEnumerator EndGame(string sceneName)
     {
-        if (isTransitioning) return;
-        StartCoroutine(TransitionToScene(winScene));
-    }
-
-    public void TriggerLoss()
-    {
-        if (isTransitioning) return;
-        StartCoroutine(TransitionToScene(loseScene));
-    }
-
-    private IEnumerator TransitionToScene(string sceneName)
-    {
-        isTransitioning = true;
-
-        // Fade to black
-        yield return StartCoroutine(Fade(0f, 1f));
-
-        // Load scene
+        StartCoroutine(FadeAudio(backgroundMusic.volume, 0f, musicFadeTime));
+        yield return StartCoroutine(FadeVisuals(0f, 1f, fadeDuration));
         SceneManager.LoadScene(sceneName);
     }
 
-    private IEnumerator Fade(float from, float to)
+    private IEnumerator FadeAudio(float startVol, float endVol, float duration)
     {
-        fadeCanvasGroup.blocksRaycasts = true;
         float elapsed = 0f;
-
-        while (elapsed < fadeDuration)
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            fadeCanvasGroup.alpha = Mathf.Lerp(from, to, elapsed / fadeDuration);
+            backgroundMusic.volume = Mathf.Lerp(startVol, endVol, elapsed / duration);
             yield return null;
         }
+        backgroundMusic.volume = endVol;
+    }
 
-        fadeCanvasGroup.alpha = to;
-        fadeCanvasGroup.blocksRaycasts = (to == 1f);
+    private IEnumerator FadeVisuals(float startAlpha, float endAlpha, float duration)
+    {
+        fadeCanvasGroup.gameObject.SetActive(true);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            fadeCanvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsed / duration);
+            yield return null;
+        }
+        fadeCanvasGroup.alpha = endAlpha;
     }
 }

@@ -1181,7 +1181,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fadeCanvas: {fileID: 201607750}
-  fadeDuration: 4
+  fadeDuration: 3
   startSceneName: StayMain
   aboutSceneName: AboutScene
   menuSceneName: MainMenu
