@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class OtherHand : MonoBehaviour
@@ -33,6 +34,20 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float otherHandWidth = 1f;
     private CircleCollider2D playerHandCollider;
     private float playerLeftBound;
+
+    [Header("Win Condition")]
+    [SerializeField] private float winDelay = 3f;
+    [SerializeField] private GameSession gameSession;
+    private float coverTime = 0f;
+    private bool isCoveringCoverSpace = false;
+
+    [Header("Loss Condition")]
+    [SerializeField] private float lossAnimationDuration = 2f;
+    private bool isLossTriggered = false;
+
+    /* [Header("Loss Animation")]
+    [SerializeField] private Animator animator;
+    [SerializeField] private string lossAnimationTrigger = "Lose"; */
 
     [Header("Debug")]
     [SerializeField] private bool visualizeColliders = true;
@@ -100,12 +115,56 @@ public class OtherHand : MonoBehaviour
         coverSpace.enabled = true;
         personalSpace.enabled = true;
         recoilSpace.enabled = true;
+
+        if (gameSession == null)
+        {
+            gameSession = FindFirstObjectByType<GameSession>();
+            if (gameSession == null)
+            {
+                Debug.LogWarning("GameSession reference not found in scene!");
+            }
+        }
     }
 
     private void Update()
     {
+        if (isLossTriggered) return;
+
         HandleShrinkingAnimation();
         CalculatePlayerColliderBounds();
+
+        // Cover space contact
+        if (coverSpace != null && coverSpace.enabled)
+        {
+            int hits = Physics2D.OverlapCollider(coverSpace, contactFilter, overlapResults);
+            isCoveringCoverSpace = false;
+
+            for (int i = 0; i < hits; i++)
+            {
+                if (IsPlayerHand(overlapResults[i]))
+                {
+                    isCoveringCoverSpace = true;
+                    break;
+                }
+            }
+
+            // Time while covering
+            if (isCoveringCoverSpace)
+            {
+                coverTime += Time.deltaTime;
+                if (coverTime >= winDelay && gameSession != null)
+                {
+                    gameSession.TriggerWin();
+                    // Prevent multiple triggers
+                    coverTime = 0f;
+                    isCoveringCoverSpace = false;
+                }
+            }
+            else
+            {
+                coverTime = 0f; // Reset timer
+            }
+        }
 
         if (!personalSpace.enabled) isInPersonalSpace = false;
         if (!recoilSpace.enabled) isInRecoilSpace = false;
@@ -272,7 +331,11 @@ public class OtherHand : MonoBehaviour
                 if (IsPlayerHand(overlapResults[i]))
                 {
                     if (collider == personalSpace) isInPersonalSpace = true;
-                    if (collider == recoilSpace) isInRecoilSpace = true;
+                    if (collider == recoilSpace && !isLossTriggered)
+                    {
+                        isInRecoilSpace = true;
+                        TriggerLossSequence();
+                    }
                     break;
                 }
             }
@@ -360,6 +423,51 @@ public class OtherHand : MonoBehaviour
         if (playerHand != null && other.gameObject == playerHand) return true;
         return playerHandLayer.value != 0 &&
                (playerHandLayer.value & (1 << other.gameObject.layer)) != 0;
+    }
+
+    private void TriggerLossSequence()
+    {
+        if (isLossTriggered || gameSession == null) return;
+
+        isLossTriggered = true;
+
+        // Disable game mechanics
+        shrinking = false;
+        movementPending = false;
+        movementShrinking = false;
+
+        // Disable all colliders
+        personalSpace?.gameObject.SetActive(false);
+        recoilSpace?.gameObject.SetActive(false);
+        coverSpace?.gameObject.SetActive(false);
+        movementSpace?.gameObject.SetActive(false);
+
+        // Start the loss sequence
+        StartCoroutine(PlayLossAnimationAndTriggerLoss());
+    }
+
+    private IEnumerator PlayLossAnimationAndTriggerLoss()
+    {
+        /* if (animator != null)
+        {
+            animator.SetTrigger(lossAnimationTrigger);
+
+            // Wait for animation to complete
+            yield return new WaitForSeconds(lossAnimationDuration);
+
+            // Alternative: Wait for animation state to complete
+            // yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1f);
+        }
+        else
+        {
+            // No animator, just wait the duration
+            yield return new WaitForSeconds(lossAnimationDuration);
+        } */
+
+        yield return new WaitForSeconds(lossAnimationDuration); // Remove this once the animation is made
+
+        Debug.Log("Triggering loss condition now!");
+        gameSession.TriggerLoss();
     }
     #endregion
 

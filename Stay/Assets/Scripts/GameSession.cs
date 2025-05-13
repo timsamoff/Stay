@@ -9,63 +9,67 @@ public class GameSession : MonoBehaviour
     [Header("Fade Settings")]
     [SerializeField] private CanvasGroup fadeCanvasGroup;
     [SerializeField] private float fadeDuration = 2f;
-    [SerializeField] private string menuScene = "MainMenu";
+    [SerializeField] private string winScene = "Win";
+    [SerializeField] private string loseScene = "Lose";
 
-    private bool isFading;
-    private bool gameOver;
+    private bool isTransitioning;
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void Start()
     {
-        fadeCanvasGroup.gameObject.SetActive(true);
+        // Start with screen black and fade in
         fadeCanvasGroup.alpha = 1f;
         fadeCanvasGroup.blocksRaycasts = true;
-
-        // Fade in to start game
-        StartCoroutine(FadeRoutine(1f, 0f, true));
+        StartCoroutine(Fade(1f, 0f)); // Fade from black to clear
     }
 
-    public void TriggerWin() => EndGame();
-    public void TriggerLoss() => EndGame();
-
-    private void EndGame()
+    public void TriggerWin()
     {
-        if (gameOver || isFading) return;
-        gameOver = true;
-        StartCoroutine(FadeRoutine(0f, 1f, false));
+        if (isTransitioning) return;
+        StartCoroutine(TransitionToScene(winScene));
     }
 
-    private IEnumerator FadeRoutine(float startAlpha, float targetAlpha, bool disableAfter)
+    public void TriggerLoss()
     {
-        isFading = true;
-        fadeCanvasGroup.gameObject.SetActive(true);
-        fadeCanvasGroup.blocksRaycasts = true; // Block interactions during fade
+        if (isTransitioning) return;
+        StartCoroutine(TransitionToScene(loseScene));
+    }
 
+    private IEnumerator TransitionToScene(string sceneName)
+    {
+        isTransitioning = true;
+
+        // Fade to black
+        yield return StartCoroutine(Fade(0f, 1f));
+
+        // Load scene
+        SceneManager.LoadScene(sceneName);
+    }
+
+    private IEnumerator Fade(float from, float to)
+    {
+        fadeCanvasGroup.blocksRaycasts = true;
         float elapsed = 0f;
+
         while (elapsed < fadeDuration)
         {
             elapsed += Time.deltaTime;
-            fadeCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsed / fadeDuration);
+            fadeCanvasGroup.alpha = Mathf.Lerp(from, to, elapsed / fadeDuration);
             yield return null;
         }
 
-        fadeCanvasGroup.alpha = targetAlpha;
-        fadeCanvasGroup.blocksRaycasts = false;
-
-        if (disableAfter)
-        {
-            fadeCanvasGroup.gameObject.SetActive(false);
-        }
-        else
-        {
-            SceneManager.LoadScene(menuScene);
-        }
-
-        isFading = false;
+        fadeCanvasGroup.alpha = to;
+        fadeCanvasGroup.blocksRaycasts = (to == 1f);
     }
 }
