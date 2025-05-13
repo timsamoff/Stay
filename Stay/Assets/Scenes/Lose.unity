@@ -603,7 +603,7 @@ GameObject:
   - component: {fileID: 773462582}
   - component: {fileID: 773462581}
   m_Layer: 5
-  m_Name: Stay
+  m_Name: Message
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -648,7 +648,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Be patient...
+  m_text: Message...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fa954a21f96412f4db01b96f34af7497, type: 2}
   m_sharedMaterial: {fileID: 3165440334766553369, guid: fa954a21f96412f4db01b96f34af7497, type: 2}
@@ -1262,6 +1262,7 @@ GameObject:
   - component: {fileID: 2042141939}
   - component: {fileID: 2042141944}
   - component: {fileID: 2042141945}
+  - component: {fileID: 2042141946}
   m_Layer: 5
   m_Name: UI
   m_TagString: Untagged
@@ -1484,6 +1485,26 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2042141946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2042141937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c90bba5a3b546b4ea7d4135de1b163c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _textComponent: {fileID: 773462581}
+  _textOptions:
+  - Be calm...
+  - Chill out...
+  - Mellow out...
+  - Keep your cool...
+  - Ease up...
+  - Compose yourself...
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
