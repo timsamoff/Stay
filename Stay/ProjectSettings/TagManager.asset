@@ -5,7 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - PlayerHand
-  - Otherhand
+  - OtherHand
   layers:
   - Default
   - TransparentFX

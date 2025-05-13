@@ -8,7 +8,9 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float personalSpaceRadius = 6f;
     [SerializeField] private float recoilSpaceRadius = 3f;
     [SerializeField] private float coverSpaceRadius = 1f;
-    [SerializeField] private float shrinkSpeed = 0.2f;
+    [SerializeField] private Vector2 shrinkSpeedRange = new Vector2(0.1f, 0.5f);
+
+    private float shrinkSpeed;
 
     [Header("Vertical Offsets")]
     [SerializeField] private float recoilSpaceVerticalOffset = 0f;
@@ -27,7 +29,7 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float movementDelay = 2f;
 
     [Header("References")]
-    [SerializeField] private GameObject playerHand;
+    [SerializeField] private PlayerHand playerHand;
     [SerializeField] private LayerMask playerHandLayer;
 
     [Header("Collision Bounds")]
@@ -36,18 +38,26 @@ public class OtherHand : MonoBehaviour
     private float playerLeftBound;
 
     [Header("Win Condition")]
+    [SerializeField] private float movementStopDelay = 1f;
     [SerializeField] private float winDelay = 3f;
     [SerializeField] private GameSession gameSession;
+    
+    private bool playerHandStopped = false;
     private float coverTime = 0f;
     private bool isCoveringCoverSpace = false;
 
     [Header("Loss Condition")]
     [SerializeField] private float lossAnimationDuration = 2f;
+    
     private bool isLossTriggered = false;
 
     /* [Header("Loss Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private string lossAnimationTrigger = "Lose"; */
+
+    [Header("Recoil Sounds")]
+    [SerializeField] private AudioClip[] recoilSounds;
+    [SerializeField] private AudioSource audioSource;
 
     [Header("Debug")]
     [SerializeField] private bool visualizeColliders = true;
@@ -92,6 +102,10 @@ public class OtherHand : MonoBehaviour
 
     private void Start()
     {
+        shrinkSpeed = Random.Range(shrinkSpeedRange.x, shrinkSpeedRange.y);
+
+        Debug.Log($"Shrink speed: {shrinkSpeed}");
+
         isInPersonalSpace = false;
         isInRecoilSpace = false;
 
@@ -152,17 +166,28 @@ public class OtherHand : MonoBehaviour
             if (isCoveringCoverSpace)
             {
                 coverTime += Time.deltaTime;
+
+                // Stop movement first
+                if (coverTime >= movementStopDelay && !playerHandStopped)
+                {
+                    playerHand.MovementEnabled = false;
+                    playerHandStopped = true;
+                    Debug.Log("PlayerHand movement stopped");
+                }
+
+                // Then trigger win after longer delay
                 if (coverTime >= winDelay && gameSession != null)
                 {
                     gameSession.TriggerWin();
-                    // Prevent multiple triggers
                     coverTime = 0f;
                     isCoveringCoverSpace = false;
+                    playerHandStopped = false; // Reset for next time
                 }
             }
             else
             {
-                coverTime = 0f; // Reset timer
+                coverTime = 0f;
+                playerHandStopped = false;
             }
         }
 
@@ -198,7 +223,7 @@ public class OtherHand : MonoBehaviour
                 return;
             }
 
-            // Shrink personal space
+            // Shrink personal space using the randomized shrinkSpeed
             personalSpace.radius = Mathf.MoveTowards(
                 personalSpace.radius,
                 coverSpaceRadius,
@@ -334,6 +359,7 @@ public class OtherHand : MonoBehaviour
                     if (collider == recoilSpace && !isLossTriggered)
                     {
                         isInRecoilSpace = true;
+                        PlayRandomRecoilSound(); // New sound playback
                         TriggerLossSequence();
                     }
                     break;
@@ -423,6 +449,15 @@ public class OtherHand : MonoBehaviour
         if (playerHand != null && other.gameObject == playerHand) return true;
         return playerHandLayer.value != 0 &&
                (playerHandLayer.value & (1 << other.gameObject.layer)) != 0;
+    }
+
+    private void PlayRandomRecoilSound()
+    {
+        if (recoilSounds != null && recoilSounds.Length > 0 && audioSource != null)
+        {
+            int randomIndex = Random.Range(0, recoilSounds.Length);
+            audioSource.PlayOneShot(recoilSounds[randomIndex]);
+        }
     }
 
     private void TriggerLossSequence()

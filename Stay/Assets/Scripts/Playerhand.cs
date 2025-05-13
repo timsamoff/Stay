@@ -16,12 +16,43 @@ public class PlayerHand : MonoBehaviour
 
     private Vector3 velocity;
     private float currentSpeed;
-    private float maxAllowedY; // The highest Y position where hand bottom touches screen bottom
+    private float maxAllowedY;
     private float handBottomOffset;
     private float lastSoundTime;
     private Vector3 lastPosition;
+    private bool movementEnabled = true;
+
+    public bool MovementEnabled
+    {
+        get => movementEnabled;
+        set
+        {
+            // Only trigger changes when the state actually changes
+            if (movementEnabled != value)
+            {
+                movementEnabled = value;
+                if (!value)
+                {
+                    velocity = Vector3.zero;
+                    currentSpeed = 0f;
+                    Debug.Log("PlayerHand movement disabled");
+                }
+                else
+                {
+                    Debug.Log("PlayerHand movement enabled");
+                }
+            }
+        }
+    }
 
     private void Start()
+    {
+        InitializeComponents();
+        CalculateHandBounds();
+        Cursor.visible = false;
+    }
+
+    private void InitializeComponents()
     {
         if (mainCamera == null)
             mainCamera = Camera.main;
@@ -33,68 +64,71 @@ public class PlayerHand : MonoBehaviour
             audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
+    }
 
-        // Calculate hand's bottom offset from its pivot
+    private void CalculateHandBounds()
+    {
         handBottomOffset = transform.position.y - spriteRenderer.bounds.min.y;
-
-        // Calculate maximum allowed Y position (when hand bottom touches screen bottom)
         float screenBottomWorldY = mainCamera.ViewportToWorldPoint(new Vector3(0, 0, Mathf.Abs(mainCamera.transform.position.z))).y;
         maxAllowedY = screenBottomWorldY + handBottomOffset;
-
-        Cursor.visible = false;
         lastPosition = transform.position;
-
-        Debug.Log($"Hand initialized - Bottom Offset: {handBottomOffset} | Max Allowed Y: {maxAllowedY}");
     }
 
     private void Update()
     {
-        // Store previous position for movement detection
-        Vector3 previousPosition = transform.position;
+        if (!MovementEnabled)
+        {
+            velocity = Vector3.zero;
+            currentSpeed = 0f;
+            return;
+        }
 
-        // Get input direction
+        HandleMovementInput();
+        TryPlayMovementSound();
+    }
+
+    private void HandleMovementInput()
+    {
+        Vector3 previousPosition = transform.position;
         Vector3 inputDirection = new Vector3(
             Input.GetAxisRaw("Mouse X"),
             Input.GetAxisRaw("Mouse Y"),
             0
         ).normalized;
 
-        // Calculate target velocity
         Vector3 targetVelocity = inputDirection * speed;
-
-        // Smooth velocity
         velocity = Vector3.Lerp(velocity, targetVelocity, smoothing * Time.deltaTime * 60f);
 
-        // Calculate new position
         Vector3 newPosition = transform.position + velocity * Time.deltaTime;
+        newPosition = ApplyVerticalBounds(newPosition);
 
-        // Calculate hand's bottom position at new position
+        transform.position = newPosition;
+        currentSpeed = velocity.magnitude;
+    }
+
+    private Vector3 ApplyVerticalBounds(Vector3 newPosition)
+    {
         float newHandBottom = newPosition.y - handBottomOffset;
-
-        // Prevent moving up when hand bottom is at screen bottom
         if (newHandBottom >= maxAllowedY - handBottomOffset && velocity.y > 0)
         {
             newPosition.y = maxAllowedY;
-            velocity.y = 0; // Stop upward movement
+            velocity.y = 0;
         }
-
-        // Apply movement
-        transform.position = newPosition;
-        currentSpeed = velocity.magnitude;
-
-        TryPlayMovementSound(previousPosition, newPosition);
+        return newPosition;
     }
 
-    private void TryPlayMovementSound(Vector3 oldPosition, Vector3 newPosition)
+    private void TryPlayMovementSound()
     {
         if (movementSounds == null || movementSounds.Length == 0 || currentSpeed < minSpeedForSound)
             return;
 
-        if (Vector3.Distance(oldPosition, newPosition) > 0.01f && Time.time - lastSoundTime > soundCooldown)
+        if (Vector3.Distance(lastPosition, transform.position) > 0.01f &&
+            Time.time - lastSoundTime > soundCooldown)
         {
             PlayRandomSound();
             lastSoundTime = Time.time;
         }
+        lastPosition = transform.position;
     }
 
     private void PlayRandomSound()
@@ -102,19 +136,14 @@ public class PlayerHand : MonoBehaviour
         if (movementSounds.Length == 0 || audioSource == null)
             return;
 
-        int randomIndex = Random.Range(0, movementSounds.Length);
-        AudioClip clip = movementSounds[randomIndex];
-
+        AudioClip clip = movementSounds[Random.Range(0, movementSounds.Length)];
         if (clip != null)
         {
             audioSource.PlayOneShot(clip);
         }
     }
 
-    public float GetCurrentSpeed()
-    {
-        return currentSpeed;
-    }
+    public float GetCurrentSpeed() => currentSpeed;
 
     private void OnDisable()
     {
@@ -125,7 +154,6 @@ public class PlayerHand : MonoBehaviour
     {
         if (!Application.isPlaying) return;
 
-        // Draw hand bottom position
         Gizmos.color = Color.green;
         Vector3 handBottomPos = new Vector3(
             transform.position.x,
@@ -134,7 +162,6 @@ public class PlayerHand : MonoBehaviour
         );
         Gizmos.DrawSphere(handBottomPos, 0.1f);
 
-        // Draw screen bottom
         Gizmos.color = Color.red;
         Vector3 screenBottomStart = new Vector3(-10, maxAllowedY - handBottomOffset, 0);
         Vector3 screenBottomEnd = new Vector3(10, maxAllowedY - handBottomOffset, 0);
