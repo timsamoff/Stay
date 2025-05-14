@@ -1498,7 +1498,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _textComponent: {fileID: 773462581}
   _textOptions:
-  - Breathe.
+  - Now breathe.
   - Relax.
   - Just right.
   - Relief.

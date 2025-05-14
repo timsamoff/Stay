@@ -66,6 +66,7 @@ public class OtherHand : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool visualizeColliders = true;
+    [SerializeField] private bool drawCollidersInEditor = true;
     [SerializeField] private bool continuousDetection = true;
     [SerializeField] private float detectionInterval = 0.1f;
 
@@ -541,15 +542,10 @@ public class OtherHand : MonoBehaviour
             {
                 if (IsPlayerHand(overlapResults[i]))
                 {
-                    if (collider == personalSpace)
-                    {
-                        isInPersonalSpace = true;
-                    }
+                    if (collider == personalSpace) isInPersonalSpace = true;
                     if (collider == recoilSpace && !isLossTriggered)
                     {
                         isInRecoilSpace = true;
-                        // Stop PlayerHand immediately when touching recoilSpace
-                        playerHand.MovementEnabled = false;
                         PlayRandomRecoilSound();
                         TriggerLossSequence();
                     }
@@ -682,7 +678,9 @@ public class OtherHand : MonoBehaviour
     #region Debug Tools
     private void OnDrawGizmos()
     {
-        if (!visualizeColliders) return;
+        // Always draw in editor if drawCollidersInEditor is true
+        bool shouldDraw = Application.isPlaying ? visualizeColliders : drawCollidersInEditor;
+        if (!shouldDraw) return;
 
         Vector2 currentPos = transform.position;
         float playerLeftEdge = currentPos.x + 2f;
@@ -714,29 +712,66 @@ public class OtherHand : MonoBehaviour
                            new Vector3(playerLeftEdge, currentPos.y + 2, 0));
         }
 
-        // Draw colliders
-        if (coverSpace != null)
+        // Approximations in editor
+        if (Application.isPlaying)
         {
+            // Runtime drawing
+            if (coverSpace != null)
+            {
+                Gizmos.color = new Color(0, 1, 0, coverSpace.enabled ? 0.5f : 0.2f);
+                Gizmos.DrawWireCube(coverSpace.transform.position, coverSpace.size);
+            }
+
+            if (personalSpace != null)
+            {
+                Gizmos.color = new Color(1, 1, 0, personalSpace.enabled ? 0.5f : 0.2f);
+                Gizmos.DrawWireSphere(personalSpace.transform.position, personalSpace.radius);
+            }
+
+            if (recoilSpace != null)
+            {
+                Gizmos.color = new Color(1, 0, 0, recoilSpace.enabled ? 0.5f : 0.2f);
+                Gizmos.DrawWireSphere(recoilSpace.transform.position, recoilSpace.radius);
+            }
+
+            if (movementSpace != null)
+            {
+                Gizmos.color = new Color(1, 0, 1, movementSpace.enabled ? 0.5f : 0.2f);
+                Gizmos.DrawWireSphere(movementSpace.transform.position, movementSpace.radius);
+            }
+        }
+        else
+        {
+            // Approximations based on serialized values
+            Vector2 editorOffset = Vector2.zero;
+
+            // Cover Space
             Gizmos.color = new Color(0, 1, 0, 0.5f);
-            Gizmos.DrawWireCube(coverSpace.transform.position, coverSpace.size);
-        }
+            Gizmos.DrawWireCube(
+                transform.position + new Vector3(0, coverSpaceVerticalOffset, 0),
+                new Vector3(coverSpaceRadius, coverSpaceRadius, 0)
+            );
 
-        if (personalSpace != null && personalSpace.enabled)
-        {
+            // Personal Space
             Gizmos.color = new Color(1, 1, 0, 0.5f);
-            Gizmos.DrawWireSphere(personalSpace.transform.position, personalSpace.radius);
-        }
+            Gizmos.DrawWireSphere(
+                transform.position + new Vector3(0, 0, 0),
+                personalSpaceRadius
+            );
 
-        if (recoilSpace != null && recoilSpace.enabled)
-        {
+            // Recoil Space
             Gizmos.color = new Color(1, 0, 0, 0.5f);
-            Gizmos.DrawWireSphere(recoilSpace.transform.position, recoilSpace.radius);
-        }
+            Gizmos.DrawWireSphere(
+                transform.position + new Vector3(0, recoilSpaceVerticalOffset, 0),
+                recoilSpaceRadius
+            );
 
-        if (movementSpace != null && movementSpace.enabled)
-        {
+            // Movement Space is the same as personal space in editor
             Gizmos.color = new Color(1, 0, 1, 0.5f);
-            Gizmos.DrawWireSphere(movementSpace.transform.position, movementSpace.radius);
+            Gizmos.DrawWireSphere(
+                transform.position + new Vector3(0, 0, 0),
+                personalSpaceRadius
+            );
         }
 
         if (originalPosition != Vector2.zero)
@@ -745,5 +780,5 @@ public class OtherHand : MonoBehaviour
             Gizmos.DrawWireSphere(originalPosition, maxDistanceFromOrigin);
         }
     }
-    #endregion 
+    #endregion
 }
