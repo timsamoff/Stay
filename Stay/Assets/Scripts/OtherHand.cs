@@ -541,10 +541,15 @@ public class OtherHand : MonoBehaviour
             {
                 if (IsPlayerHand(overlapResults[i]))
                 {
-                    if (collider == personalSpace) isInPersonalSpace = true;
+                    if (collider == personalSpace)
+                    {
+                        isInPersonalSpace = true;
+                    }
                     if (collider == recoilSpace && !isLossTriggered)
                     {
                         isInRecoilSpace = true;
+                        // Stop PlayerHand immediately when touching recoilSpace
+                        playerHand.MovementEnabled = false;
                         PlayRandomRecoilSound();
                         TriggerLossSequence();
                     }
@@ -740,5 +745,5 @@ public class OtherHand : MonoBehaviour
             Gizmos.DrawWireSphere(originalPosition, maxDistanceFromOrigin);
         }
     }
-    #endregion
+    #endregion 
 }
