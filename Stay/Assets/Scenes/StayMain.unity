@@ -557,6 +557,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8713719263675168905, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
   m_PrefabInstance: {fileID: 12504491}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &1132544770 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3695071092483236730, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+  m_PrefabInstance: {fileID: 12504491}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1162444328
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1254,9 +1259,17 @@ PrefabInstance:
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+      propertyPath: childAnimator
+      value: 
+      objectReference: {fileID: 1132544770}
+    - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: movementDelay
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+      propertyPath: parentAnimator
+      value: 
+      objectReference: {fileID: 473342442382756465}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: returnDuration
       value: 10
@@ -1264,6 +1277,10 @@ PrefabInstance:
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: recoilSpaceRadius
       value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+      propertyPath: screenEdgePadding
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: movementSpaceSpeed
@@ -1498,6 +1515,11 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!95 &473342442382756465 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3695071092483236730, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+  m_PrefabInstance: {fileID: 473342442382756462}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4964269862026836610
 PrefabInstance:
   m_ObjectHideFlags: 0

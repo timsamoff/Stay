@@ -22,6 +22,9 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float recoilPushMultiplier = 2f;
     [SerializeField] private float movementSmoothing = 0.1f;
     [SerializeField] private float maxDistanceFromOrigin = 10f;
+    [SerializeField] private float screenEdgePadding = 0.5f;
+
+    private float screenLeftEdge;
 
     [Header("Movement Space Settings")]
     [SerializeField] private float otherHandApproachSpeed = 1.0f;
@@ -127,6 +130,8 @@ public class OtherHand : MonoBehaviour
 
     private void Start()
     {
+        screenLeftEdge = Camera.main.ScreenToWorldPoint(Vector3.zero).x + screenEdgePadding;
+
         shrinkSpeed = Random.Range(shrinkSpeedRange.x, shrinkSpeedRange.y);
         Debug.Log($"Shrink speed: {shrinkSpeed}");
 
@@ -638,6 +643,10 @@ public class OtherHand : MonoBehaviour
                 float pushDistance = activeRadius - distanceX;
 
                 float desiredX = transform.position.x + pushDirection * pushDistance * currentPushSpeed * Time.fixedDeltaTime;
+
+                float minX = screenLeftEdge + (otherHandWidth * 0.5f * transform.localScale.x);
+                desiredX = Mathf.Max(desiredX, minX);
+
                 float newRightEdge = desiredX + (otherHandWidth * 0.5f * transform.localScale.x);
 
                 if (newRightEdge > playerLeftBound)
@@ -654,6 +663,7 @@ public class OtherHand : MonoBehaviour
 
                     if (adjustedRightEdge <= playerLeftBound)
                     {
+                        velocityAdjustedX = Mathf.Max(velocityAdjustedX, minX);
                         targetPosition.x = velocityAdjustedX;
                     }
                 }
@@ -661,9 +671,12 @@ public class OtherHand : MonoBehaviour
         }
         else
         {
+            float minX = screenLeftEdge + (otherHandWidth * 0.5f * transform.localScale.x);
+            float targetX = Mathf.Max(originalPosition.x, minX);
+
             targetPosition.x = Mathf.MoveTowards(
                 transform.position.x,
-                originalPosition.x,
+                targetX,
                 returnSpeed * Time.fixedDeltaTime
             );
         }
@@ -675,6 +688,8 @@ public class OtherHand : MonoBehaviour
             movementSmoothing
         );
 
+        // Clamp edfe of screen
+        newPosition.x = Mathf.Max(newPosition.x, screenLeftEdge + (otherHandWidth * 0.5f * transform.localScale.x));
         transform.position = newPosition;
     }
     #endregion
