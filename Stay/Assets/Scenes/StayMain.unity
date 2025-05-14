@@ -159,6 +159,10 @@ PrefabInstance:
       propertyPath: m_RenderingLayerMask
       value: 4294967295
       objectReference: {fileID: 0}
+    - target: {fileID: 3695071092483236730, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 995bb6445d1dcba4e9a21c02ed2bf3f5, type: 2}
     - target: {fileID: 8713719263675168905, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: m_LocalScale.x
       value: 1
@@ -1229,6 +1233,10 @@ PrefabInstance:
       propertyPath: m_SortingOrder
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3695071092483236730, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 995bb6445d1dcba4e9a21c02ed2bf3f5, type: 2}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: playerHand
       value: 

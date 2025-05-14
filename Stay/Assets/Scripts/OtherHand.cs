@@ -61,6 +61,14 @@ public class OtherHand : MonoBehaviour
 
     private bool isLossTriggered = false;
 
+    [Header("Redcoil Animation")]
+    [SerializeField] private Animator parentAnimator;
+    [SerializeField] private Animator childAnimator;
+    [SerializeField] private string recoilAnimationTrigger = "recoil";
+    [SerializeField] private string recoilAnimationStateName = "OH_Recoil";
+
+    private bool isPlayingRecoilAnimation = false;
+
     [Header("Recoil Sounds")]
     [SerializeField] private AudioClip[] recoilSounds;
     [SerializeField] private AudioSource audioSource;
@@ -154,6 +162,12 @@ public class OtherHand : MonoBehaviour
                 Debug.LogWarning("GameSession reference not found in scene!");
             }
         }
+
+        if (parentAnimator == null)
+            parentAnimator = GetComponent<Animator>();
+
+        if (childAnimator == null && transform.childCount > 0)
+            childAnimator = transform.GetChild(0).GetComponent<Animator>();
     }
 
     private void Update()
@@ -574,9 +588,13 @@ public class OtherHand : MonoBehaviour
                     if (collider == personalSpace) isInPersonalSpace = true;
                     if (collider == recoilSpace && !isLossTriggered)
                     {
-                        isInRecoilSpace = true;
-                        PlayRandomRecoilSound();
-                        TriggerLossSequence();
+                        if (!isInRecoilSpace)
+                        {
+                            isInRecoilSpace = true;
+                            PlayRandomRecoilSound();
+                            TriggerRecoilAnimation();
+                            TriggerLossSequence();
+                        }
                     }
                     break;
                 }
@@ -701,6 +719,43 @@ public class OtherHand : MonoBehaviour
         yield return new WaitForSeconds(lossAnimationDuration);
         Debug.Log("Triggering loss condition now!");
         gameSession.TriggerLoss();
+    }
+
+    private void TriggerRecoilAnimation()
+    {
+        if (isPlayingRecoilAnimation) return;
+
+        if (parentAnimator != null)
+        {
+            parentAnimator.SetTrigger(recoilAnimationTrigger);
+            StartCoroutine(MonitorAnimationState(parentAnimator));
+        }
+
+        if (childAnimator != null)
+        {
+            childAnimator.SetTrigger(recoilAnimationTrigger);
+            StartCoroutine(MonitorAnimationState(childAnimator));
+        }
+
+        isPlayingRecoilAnimation = true;
+    }
+
+    // Add this coroutine to monitor animation state
+    private IEnumerator MonitorAnimationState(Animator animator)
+    {
+        if (animator == null) yield break;
+
+        // Wait for animation to start
+        yield return new WaitUntil(() =>
+            animator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName));
+
+        // Wait for animation to complete
+        yield return new WaitWhile(() =>
+            animator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName) &&
+            animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1.0f);
+
+        // Pause animator at end
+        animator.speed = 0;
     }
     #endregion
 
