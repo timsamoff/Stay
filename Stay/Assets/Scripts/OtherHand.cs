@@ -45,6 +45,7 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float otherHandWidth = 1f;
     private CircleCollider2D playerHandCollider;
     private float playerLeftBound;
+    [SerializeField] private float playerHandLeftEdgeOffset = 0f;
 
     [Header("Win Condition")]
     [SerializeField] private float movementStopDelay = 1f;
@@ -549,7 +550,7 @@ public class OtherHand : MonoBehaviour
                 playerHand.transform.lossyScale.x,
                 playerHand.transform.lossyScale.y
             );
-            playerLeftBound = colliderCenter.x - worldRadius;
+            playerLeftBound = colliderCenter.x - worldRadius + 0;
         }
     }
     #endregion
@@ -719,7 +720,13 @@ public class OtherHand : MonoBehaviour
                 playerHand.transform.lossyScale.x,
                 playerHand.transform.lossyScale.y
             );
-            playerLeftEdge = colliderCenter.x - worldRadius;
+            float adjustedLeftEdge = colliderCenter.x - worldRadius + playerHandLeftEdgeOffset;
+
+            Gizmos.color = new Color(0, 1, 1, 0.8f);
+            Gizmos.DrawLine(
+                new Vector3(adjustedLeftEdge, currentPos.y - 2, 0),
+                new Vector3(adjustedLeftEdge, currentPos.y + 2, 0)
+            );
         }
 
         // OtherHand's bounds

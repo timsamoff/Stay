@@ -79,7 +79,7 @@ SpriteRenderer:
   m_SortingLayerID: -1970057435
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: -6821682386991111600, guid: 865fed972d607fa47bf80458ce126032, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 48b0abf55a57266419cf72c66a33eff1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -133,6 +133,7 @@ MonoBehaviour:
   recoilSounds: []
   audioSource: {fileID: 0}
   visualizeColliders: 1
+  drawCollidersInEditor: 1
   continuousDetection: 1
   detectionInterval: 0.1
 --- !u!50 &4213059927209362088
