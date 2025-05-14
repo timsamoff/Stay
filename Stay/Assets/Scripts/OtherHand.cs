@@ -173,6 +173,9 @@ public class OtherHand : MonoBehaviour
                 if (IsPlayerHand(overlapResults[i]))
                 {
                     isCoveringCoverSpace = true;
+                    // Keep spaces disabled during cover interaction
+                    if (personalSpace != null) personalSpace.enabled = false;
+                    if (recoilSpace != null) recoilSpace.enabled = false;
                     break;
                 }
             }
@@ -194,6 +197,18 @@ public class OtherHand : MonoBehaviour
                     coverTime = 0f;
                     isCoveringCoverSpace = false;
                     playerHandStopped = false;
+                    // Re-enable spaces after win
+                    if (personalSpace != null)
+                    {
+                        personalSpace.enabled = true;
+                        personalSpace.radius = originalPersonalRadius;
+                    }
+                    if (recoilSpace != null)
+                    {
+                        recoilSpace.enabled = true;
+                        recoilSpace.radius = recoilSpaceRadius;
+                    }
+                    shrinking = true;
                 }
             }
             else
@@ -218,6 +233,14 @@ public class OtherHand : MonoBehaviour
         }
 
         HandleMovementSpaceBehavior();
+
+        // Debug visualization of current states
+        Debug.DrawLine(transform.position, transform.position + Vector3.up * 2f,
+                      isCoveringCoverSpace ? Color.green : Color.white);
+        Debug.DrawLine(transform.position + Vector3.right, transform.position + Vector3.right + Vector3.up * 2f,
+                      isInPersonalSpace ? Color.yellow : Color.white);
+        Debug.DrawLine(transform.position + Vector3.right * 2, transform.position + Vector3.right * 2 + Vector3.up * 2f,
+                      isInRecoilSpace ? Color.red : Color.white);
     }
 
     private void FixedUpdate()
@@ -331,10 +354,15 @@ public class OtherHand : MonoBehaviour
         transform.position = originalPosition;
         SetSortingLayer(defaultSortingLayer);
 
-        personalSpace.enabled = true;
-        recoilSpace.enabled = true;
-        personalSpace.radius = originalPersonalRadius;
-        recoilSpace.radius = recoilSpaceRadius;
+        // Only re-enable spaces if we're not in cover space interaction
+        if (!isCoveringCoverSpace)
+        {
+            personalSpace.enabled = true;
+            recoilSpace.enabled = true;
+            personalSpace.radius = originalPersonalRadius;
+            recoilSpace.radius = recoilSpaceRadius;
+        }
+
         shrinking = true;
     }
 
