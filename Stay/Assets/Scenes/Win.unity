@@ -775,7 +775,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 25, y: -248.4}
+  m_AnchoredPosition: {x: 0, y: -265}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &773462581
@@ -800,8 +800,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Message.
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: fa954a21f96412f4db01b96f34af7497, type: 2}
-  m_sharedMaterial: {fileID: 3165440334766553369, guid: fa954a21f96412f4db01b96f34af7497, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d039bcfb199c56349a3026c12528d316, type: 2}
+  m_sharedMaterial: {fileID: -807744652910465378, guid: d039bcfb199c56349a3026c12528d316, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1380,7 +1380,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fadeCanvas: {fileID: 201607750}
-  fadeDuration: 3
+  fadeDuration: 2
   startSceneName: StayMain
   aboutSceneName: AboutScene
   menuSceneName: MainMenu
@@ -1500,10 +1500,10 @@ MonoBehaviour:
   _textComponent: {fileID: 773462581}
   _textOptions:
   - Now breathe.
-  - Relax.
+  - Relax now.
   - Just right.
-  - Relief.
-  - Sigh.
+  - Ah, relief.
+  - Happy sigh.
   - Rest easy.
 --- !u!114 &2042141947
 MonoBehaviour:

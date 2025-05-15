@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: a37cd14cd8a336a45b44789e0c21e13e
+guid: a4bb13dc5b62e054ca2adef59a5cad80
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Castro Script PERSONAL USE ONLY
+  - Cedarville Cursive
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0
