@@ -1276,7 +1276,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: recoilSpaceRadius
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: screenEdgePadding
