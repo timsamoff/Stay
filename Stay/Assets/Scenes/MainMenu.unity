@@ -1630,6 +1630,7 @@ GameObject:
   - component: {fileID: 2042141939}
   - component: {fileID: 2042141944}
   - component: {fileID: 2042141945}
+  - component: {fileID: 2042141946}
   m_Layer: 5
   m_Name: UI
   m_TagString: Untagged
@@ -1854,6 +1855,21 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2042141946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2042141937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61ae7262dc7a9f34c8d042ec7b363ea9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lowResCursorTexture: {fileID: 2800000, guid: baad7e865bb353a46a59d889cd6c3d41, type: 3}
+  midResCursorTexture: {fileID: 2800000, guid: 202d30e5a0d92574682f59f8cee2649b, type: 3}
+  highResCursorTexture: {fileID: 2800000, guid: 5927b630376a1a443bd62825f192f089, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
