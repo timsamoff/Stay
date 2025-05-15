@@ -35,7 +35,7 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private Color movementSpaceColor = new Color(1, 0, 1, 0.5f);
     [SerializeField] private float coverSpaceContactOffset = 0.1f;
 
-    private float currentEffectivePushSpeed; 
+    private float currentEffectivePushSpeed;
 
     [Header("Timing")]
     [SerializeField] private float movementDelay = 2f;
@@ -73,7 +73,7 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float recoilAnimationLeadTime = 0.2f;
     [SerializeField] private float recoilMovementDelay = 0.1f;
 
-    private bool isPlayingRecoilAnimation = false;
+    // private bool isPlayingRecoilAnimation = false;
     private bool isInRecoilMovement = false;
     private float recoilStartTime;
     private float recoilDelayTimer = 0f;
