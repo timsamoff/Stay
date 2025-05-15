@@ -1292,7 +1292,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: visualizeColliders
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: continuousDetection
@@ -1586,7 +1586,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3017566990735108033, guid: c282598e475087246ad2a11bdecc09bf, type: 3}
       propertyPath: m_Radius
-      value: 4.5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3017566990735108033, guid: c282598e475087246ad2a11bdecc09bf, type: 3}
       propertyPath: m_Enabled
@@ -1598,7 +1598,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3017566990735108033, guid: c282598e475087246ad2a11bdecc09bf, type: 3}
       propertyPath: m_Offset.y
-      value: 2.7
+      value: 3.75
       objectReference: {fileID: 0}
     - target: {fileID: 6537627869397790353, guid: c282598e475087246ad2a11bdecc09bf, type: 3}
       propertyPath: m_Enabled
