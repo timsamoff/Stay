@@ -35,7 +35,7 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private Color movementSpaceColor = new Color(1, 0, 1, 0.5f);
     [SerializeField] private float coverSpaceContactOffset = 0.1f;
 
-    private float currentEffectivePushSpeed;
+    private float currentEffectivePushSpeed; 
 
     [Header("Timing")]
     [SerializeField] private float movementDelay = 2f;
@@ -48,6 +48,7 @@ public class OtherHand : MonoBehaviour
     [SerializeField] private float otherHandWidth = 1f;
     private CircleCollider2D playerHandCollider;
     private float playerLeftBound;
+
     [SerializeField] private float playerHandLeftEdgeOffset = 0f;
 
     [Header("Win Condition")]
@@ -64,13 +65,21 @@ public class OtherHand : MonoBehaviour
 
     private bool isLossTriggered = false;
 
-    [Header("Redcoil Animation")]
+    [Header("Recoil Animation")]
     [SerializeField] private Animator parentAnimator;
     [SerializeField] private Animator childAnimator;
     [SerializeField] private string recoilAnimationTrigger = "recoil";
     [SerializeField] private string recoilAnimationStateName = "OH_Recoil";
+    [SerializeField] private float recoilAnimationLeadTime = 0.2f;
+    [SerializeField] private float recoilMovementDelay = 0.1f;
 
     private bool isPlayingRecoilAnimation = false;
+    private bool isInRecoilMovement = false;
+    private float recoilStartTime;
+    private float recoilDelayTimer = 0f;
+    private bool isAnimationComplete = false;
+    private bool isRecoilActive = false;
+    private bool isAnimationPlaying = false;
 
     [Header("Recoil Sounds")]
     [SerializeField] private AudioClip[] recoilSounds;
@@ -217,6 +226,7 @@ public class OtherHand : MonoBehaviour
                     coverTime = 0f;
                     isCoveringCoverSpace = false;
                     playerHandStopped = false;
+
                     // Re-enable spaces after win
                     if (personalSpace != null)
                     {
@@ -333,6 +343,33 @@ public class OtherHand : MonoBehaviour
             else
             {
                 transform.position = Vector2.MoveTowards(transform.position, targetPos, step);
+            }
+        }
+    }
+
+    private void CheckContinuousOverlaps()
+    {
+        isInPersonalSpace = false;
+        isInRecoilSpace = false;
+
+        foreach (var collider in GetActiveColliders())
+        {
+            if (collider == null || collider == coverSpace) continue;
+
+            int hits = Physics2D.OverlapCollider(collider, contactFilter, overlapResults);
+
+            for (int i = 0; i < hits; i++)
+            {
+                if (IsPlayerHand(overlapResults[i]))
+                {
+                    if (collider == personalSpace) isInPersonalSpace = true;
+                    if (collider == recoilSpace && !isLossTriggered && !isInRecoilMovement)
+                    {
+                        isInRecoilSpace = true;
+                        StartRecoilSequence();
+                    }
+                    break;
+                }
             }
         }
     }
@@ -502,6 +539,15 @@ public class OtherHand : MonoBehaviour
             }
         }
     }
+
+    private void StartRecoilSequence()
+    {
+        TriggerRecoilAnimation();
+        PlayRandomRecoilSound();
+        isInRecoilMovement = true;
+        recoilDelayTimer = 0f;
+        StartCoroutine(DelayedLossSequence());
+    }
     #endregion
 
     #region Collider Management
@@ -575,38 +621,6 @@ public class OtherHand : MonoBehaviour
     #endregion
 
     #region Collision Detection
-    private void CheckContinuousOverlaps()
-    {
-        isInPersonalSpace = false;
-        isInRecoilSpace = false;
-
-        foreach (var collider in GetActiveColliders())
-        {
-            if (collider == null || collider == coverSpace) continue;
-
-            int hits = Physics2D.OverlapCollider(collider, contactFilter, overlapResults);
-
-            for (int i = 0; i < hits; i++)
-            {
-                if (IsPlayerHand(overlapResults[i]))
-                {
-                    if (collider == personalSpace) isInPersonalSpace = true;
-                    if (collider == recoilSpace && !isLossTriggered)
-                    {
-                        if (!isInRecoilSpace)
-                        {
-                            isInRecoilSpace = true;
-                            PlayRandomRecoilSound();
-                            TriggerRecoilAnimation();
-                            TriggerLossSequence();
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    }
-
     private CircleCollider2D[] GetActiveColliders()
     {
         return new[]
@@ -626,16 +640,31 @@ public class OtherHand : MonoBehaviour
         float otherHandLeftEdge = transform.position.x - (otherHandWidth * 0.5f * transform.localScale.x);
         float otherHandRightEdge = transform.position.x + (otherHandWidth * 0.5f * transform.localScale.x);
 
-        bool shouldMove = (personalSpace.enabled && isInPersonalSpace) ||
-                         (recoilSpace.enabled && isInRecoilSpace);
+        bool shouldMove = personalSpace.enabled && isInPersonalSpace;
+        bool shouldRecoil = isRecoilActive && isInRecoilSpace;
+
+        // Start recoil movement after animation starts playing
+        if (shouldRecoil && (Time.time - recoilStartTime) >= recoilMovementDelay)
+        {
+            shouldMove = true;
+        }
 
         if (shouldMove && playerHand != null)
         {
             float currentPushSpeed = pushSpeed;
-            if (isInRecoilSpace) currentPushSpeed *= recoilPushMultiplier;
+            if (isRecoilActive)
+            {
+                currentPushSpeed *= recoilPushMultiplier;
+
+                // Scale animation speed with recoil intensity
+                float animationSpeed = Mathf.Lerp(1f, 3f,
+                    (currentPushSpeed - pushSpeed) / (pushSpeed * (recoilPushMultiplier - 1)));
+                if (parentAnimator != null) parentAnimator.speed = animationSpeed;
+                if (childAnimator != null) childAnimator.speed = animationSpeed;
+            }
 
             float distanceX = Mathf.Abs(playerLeftBound - otherHandRightEdge);
-            float activeRadius = isInRecoilSpace ? recoilSpace.radius : personalSpace.radius;
+            float activeRadius = isRecoilActive ? recoilSpace.radius : personalSpace.radius;
 
             if (distanceX < activeRadius)
             {
@@ -644,6 +673,7 @@ public class OtherHand : MonoBehaviour
 
                 float desiredX = transform.position.x + pushDirection * pushDistance * currentPushSpeed * Time.fixedDeltaTime;
 
+                // Screen edge clamping
                 float minX = screenLeftEdge + (otherHandWidth * 0.5f * transform.localScale.x);
                 desiredX = Mathf.Max(desiredX, minX);
 
@@ -669,7 +699,7 @@ public class OtherHand : MonoBehaviour
                 }
             }
         }
-        else
+        else if (!isRecoilActive) // Only return to original position if not in recoil
         {
             float minX = screenLeftEdge + (otherHandWidth * 0.5f * transform.localScale.x);
             float targetX = Mathf.Max(originalPosition.x, minX);
@@ -688,9 +718,30 @@ public class OtherHand : MonoBehaviour
             movementSmoothing
         );
 
-        // Clamp edfe of screen
+        // Final screen edge clamp
         newPosition.x = Mathf.Max(newPosition.x, screenLeftEdge + (otherHandWidth * 0.5f * transform.localScale.x));
         transform.position = newPosition;
+
+        // Pause animation at end
+        if (isRecoilActive && !isInRecoilSpace)
+        {
+            if (parentAnimator != null &&
+                parentAnimator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName) &&
+                parentAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.95f)
+            {
+                parentAnimator.speed = 0;
+                parentAnimator.Play(recoilAnimationStateName, 0, 1.0f); // Snap to final frame
+            }
+            if (childAnimator != null &&
+                childAnimator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName) &&
+                childAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.95f)
+            {
+                childAnimator.speed = 0;
+                childAnimator.Play(recoilAnimationStateName, 0, 1.0f);
+            }
+
+            isRecoilActive = false;
+        }
     }
     #endregion
 
@@ -709,6 +760,13 @@ public class OtherHand : MonoBehaviour
             int randomIndex = Random.Range(0, recoilSounds.Length);
             audioSource.PlayOneShot(recoilSounds[randomIndex]);
         }
+    }
+
+    private IEnumerator DelayedLossSequence()
+    {
+        yield return new WaitForSeconds(recoilAnimationLeadTime + 0.1f);
+        TriggerLossSequence();
+        isInRecoilMovement = false;
     }
 
     private void TriggerLossSequence()
@@ -738,39 +796,44 @@ public class OtherHand : MonoBehaviour
 
     private void TriggerRecoilAnimation()
     {
-        if (isPlayingRecoilAnimation) return;
+        if (isRecoilActive) return;
+
+        isRecoilActive = true;
+        recoilStartTime = Time.time;
 
         if (parentAnimator != null)
         {
-            parentAnimator.SetTrigger(recoilAnimationTrigger);
-            StartCoroutine(MonitorAnimationState(parentAnimator));
+            parentAnimator.Play(recoilAnimationStateName, 0, 0f);
+            parentAnimator.speed = 1f;
         }
 
         if (childAnimator != null)
         {
-            childAnimator.SetTrigger(recoilAnimationTrigger);
-            StartCoroutine(MonitorAnimationState(childAnimator));
+            childAnimator.Play(recoilAnimationStateName, 0, 0f);
+            childAnimator.speed = 1f;
         }
-
-        isPlayingRecoilAnimation = true;
     }
 
-    // Add this coroutine to monitor animation state
     private IEnumerator MonitorAnimationState(Animator animator)
     {
         if (animator == null) yield break;
 
         // Wait for animation to start
-        yield return new WaitUntil(() =>
-            animator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName));
+        while (!animator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName))
+        {
+            yield return null;
+        }
 
         // Wait for animation to complete
-        yield return new WaitWhile(() =>
-            animator.GetCurrentAnimatorStateInfo(0).IsName(recoilAnimationStateName) &&
-            animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1.0f);
+        while (animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1.0f)
+        {
+            yield return null;
+        }
 
-        // Pause animator at end
+        // Pause at the end
         animator.speed = 0;
+        animator.Play(recoilAnimationStateName, 0, 1.0f); // Force to last frame
+        isAnimationPlaying = false;
     }
     #endregion
 

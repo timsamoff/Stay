@@ -1264,7 +1264,7 @@ PrefabInstance:
       objectReference: {fileID: 1132544770}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: movementDelay
-      value: 1
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: parentAnimator
@@ -1280,7 +1280,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: screenEdgePadding
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: movementSpaceSpeed
@@ -1288,7 +1288,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: shrinkSpeedRange.x
-      value: 0.5
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: visualizeColliders
@@ -1324,7 +1324,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: movementSpaceShrinkSpeed
-      value: 1.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: playerHandLeftEdgeOffset
