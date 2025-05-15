@@ -1288,7 +1288,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: shrinkSpeedRange.x
-      value: 0.1
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: visualizeColliders
@@ -1305,6 +1305,10 @@ PrefabInstance:
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: coveringSortingLayer
       value: CoverHand
+      objectReference: {fileID: 0}
+    - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
+      propertyPath: movementSpaceColor.a
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6804631090620964568, guid: eff9aff8b337cc14bb0c02caed924f85, type: 3}
       propertyPath: playerLeftEdgeOffset
