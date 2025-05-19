@@ -664,8 +664,8 @@ MonoBehaviour:
   m_fontColorGradient:
     topLeft: {r: 0.8584906, g: 0.8392555, b: 0.745105, a: 1}
     topRight: {r: 0.8584906, g: 0.8392555, b: 0.745105, a: 1}
-    bottomLeft: {r: 0.8313726, g: 0.7568628, b: 0.3921569, a: 1}
-    bottomRight: {r: 0.8313726, g: 0.7568628, b: 0.3921569, a: 1}
+    bottomLeft: {r: 0.83137256, g: 0.39215687, b: 0.40744138, a: 1}
+    bottomRight: {r: 0.83137256, g: 0.39215687, b: 0.40744138, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
@@ -825,7 +825,7 @@ MonoBehaviour:
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.7028302, g: 1, b: 0.8251942, a: 1}
+    m_HighlightedColor: {r: 1, g: 0.7019608, b: 0.7222554, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
@@ -879,7 +879,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 8250452649719944486, guid: 867dc7928f8e3db4f936fbd76ac218c5, type: 3}
+  m_Sprite: {fileID: 780090743574012953, guid: 3e29b2c38da273541ad14b12c8c13e64, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
